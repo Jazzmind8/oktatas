@@ -1,1 +1,712 @@
 
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EgérKaland – játékos számítógépes gyakorlás</title>
+  <style>
+    :root {
+      --ink: #25304a;
+      --muted: #66718a;
+      --purple: #7055d8;
+      --purple-light: #eeeaff;
+      --green: #27845e;
+      --green-light: #e7f7ef;
+      --yellow: #fff4c9;
+      --border: #e4e7f0;
+      --shadow: 0 12px 35px #27345c14;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #f5f7fc;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    button { font: inherit; }
+
+    .app {
+      width: min(1000px, calc(100% - 28px));
+      margin: 28px auto;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      display: grid;
+      width: 54px;
+      height: 54px;
+      place-items: center;
+      border-radius: 18px;
+      background: var(--yellow);
+      font-size: 29px;
+    }
+
+    h1, h2, p { margin-top: 0; }
+    h1 { margin-bottom: 3px; font-size: clamp(1.35rem, 4vw, 2rem); }
+    .subtitle, .muted { color: var(--muted); }
+    .subtitle { margin: 0; }
+
+    .score {
+      flex: 0 0 auto;
+      padding: 10px 15px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: white;
+      font-weight: 700;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 225px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    nav, main {
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background: white;
+      box-shadow: var(--shadow);
+    }
+
+    nav { padding: 12px; }
+
+    .nav-button {
+      width: 100%;
+      margin: 3px 0;
+      padding: 13px 12px;
+      border: 0;
+      border-radius: 13px;
+      background: transparent;
+      color: var(--ink);
+      text-align: left;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .nav-button:hover { background: #f5f3ff; }
+    .nav-button.active { color: var(--purple); background: var(--purple-light); }
+
+    main { min-height: 560px; padding: clamp(18px, 4vw, 30px); }
+
+    .task-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    h2 { margin-bottom: 7px; font-size: 1.45rem; }
+    .task-text { color: var(--muted); line-height: 1.55; }
+
+    .secondary, .primary {
+      padding: 10px 15px;
+      border: 0;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 750;
+    }
+
+    .secondary { color: var(--ink); background: #f0f2f8; }
+    .secondary:hover { background: #e6e9f2; }
+    .primary { color: white; background: var(--purple); }
+    .primary:hover { background: #5d42c8; }
+
+    .play-area {
+      min-height: 310px;
+      margin-top: 20px;
+      padding: 20px;
+      border: 2px dashed #d9dced;
+      border-radius: 18px;
+      background: #fbfcff;
+    }
+
+    .items {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+      gap: 13px;
+      align-items: stretch;
+    }
+
+    .shape-card {
+      display: flex;
+      min-height: 105px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      background: white;
+      color: var(--ink);
+      cursor: pointer;
+      user-select: none;
+      touch-action: none;
+      transition: transform .12s, border-color .12s, background .12s;
+    }
+
+    .shape-card:hover { transform: translateY(-2px); border-color: #b8acee; }
+    .shape-card.selected { border-color: var(--purple); background: var(--purple-light); }
+    .shape-card.dragging { opacity: .55; transform: scale(.96); }
+    .shape-card.copied { outline: 3px dashed #f0b83e; outline-offset: 3px; }
+
+    .symbol { font-size: 42px; line-height: 1; }
+    .shape-label { color: var(--muted); font-size: .86rem; }
+
+    .drop-zone {
+      display: flex;
+      flex-direction: column;
+      min-height: 150px;
+      margin: 22px auto 0;
+      max-width: 340px;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 14px;
+      border: 3px dashed #b8c2d8;
+      border-radius: 18px;
+      background: #f6f8fd;
+      color: var(--muted);
+      text-align: center;
+      font-weight: 700;
+      transition: border-color .12s, background .12s;
+    }
+
+    .drop-zone.over { border-color: var(--green); background: var(--green-light); }
+    .drop-zone.success { border-style: solid; border-color: var(--green); }
+
+    .basket { width: 130px; height: 100px; }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .feedback {
+      min-height: 28px;
+      margin: 16px 0 0;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .feedback.good { color: var(--green); }
+    .feedback.try { color: #a96514; }
+
+    .hint {
+      margin-top: 18px;
+      padding: 13px 15px;
+      border-radius: 13px;
+      background: #fff8df;
+      color: #705a1c;
+      line-height: 1.5;
+    }
+
+    .keys {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    kbd {
+      padding: 5px 9px;
+      border: 1px solid #d9dced;
+      border-bottom-width: 3px;
+      border-radius: 8px;
+      background: white;
+      font: 700 .9rem ui-monospace, monospace;
+    }
+
+    .small-note { margin: 18px 0 0; color: var(--muted); font-size: .9rem; }
+
+    @media (max-width: 650px) {
+      .app { width: min(100% - 18px, 520px); margin: 14px auto; }
+      header { align-items: flex-start; }
+      .layout { grid-template-columns: 1fr; }
+      nav { display: grid; grid-template-columns: repeat(2, 1fr); }
+      .nav-button { text-align: center; }
+      main { min-height: 500px; }
+      .play-area { padding: 13px; }
+      .score { padding: 8px 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">🦊</div>
+        <div>
+          <h1>EgérKaland</h1>
+          <p class="subtitle">Játssz, gyakorolj, gyűjts csillagokat!</p>
+        </div>
+      </div>
+      <div class="score" aria-live="polite">⭐ Csillagok: <span id="score">0</span></div>
+    </header>
+
+    <div class="layout">
+      <nav aria-label="Gyakorlófeladatok">
+        <button class="nav-button active" data-mode="click">🖱️ Kattints!</button>
+        <button class="nav-button" data-mode="drag">🧲 Húzd a helyére!</button>
+        <button class="nav-button" data-mode="select">🔎 Jelöld ki!</button>
+        <button class="nav-button" data-mode="keys">⌨️ Billentyűtrükkök</button>
+      </nav>
+
+      <main>
+        <div class="task-top">
+          <div>
+            <h2 id="title">Kattints a megfelelő alakzatra</h2>
+            <p class="task-text" id="instructions"></p>
+          </div>
+          <button class="secondary" id="new-task">Új feladat</button>
+        </div>
+
+        <section class="play-area" id="play-area" aria-label="Játékterület"></section>
+        <div class="controls" id="controls"></div>
+        <p class="feedback" id="feedback" aria-live="polite"></p>
+        <div class="hint" id="hint"></div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const shapes = [
+      { id: "blue-circle", name: "kék kör", icon: "●", color: "#3987e8" },
+      { id: "red-square", name: "piros négyzet", icon: "■", color: "#e65b5b" },
+      { id: "yellow-star", name: "sárga csillag", icon: "★", color: "#e9ae22" },
+      { id: "green-triangle", name: "zöld háromszög", icon: "▲", color: "#36a875" },
+      { id: "purple-diamond", name: "lila rombusz", icon: "◆", color: "#8a62d6" }
+    ];
+
+    const basketSvg = `
+      <svg class="basket" viewBox="0 0 130 100" aria-hidden="true">
+        <path d="M 34 42 Q 65 -4 96 42" fill="none" stroke="#8a5a2b" stroke-width="7" stroke-linecap="round"/>
+        <path d="M 16 40 L 114 40 L 100 92 L 30 92 Z" fill="#d89a55" stroke="#8a5a2b" stroke-width="3" stroke-linejoin="round"/>
+        <g stroke="#8a5a2b" stroke-width="2.5" fill="none" stroke-linecap="round">
+          <path d="M 22 52 L 108 52"/>
+          <path d="M 28 64 L 103 64"/>
+          <path d="M 34 76 L 97 76"/>
+          <path d="M 42 40 L 36 92"/>
+          <path d="M 65 40 L 65 92"/>
+          <path d="M 88 40 L 94 92"/>
+        </g>
+        <rect x="10" y="34" width="110" height="10" rx="5" fill="#b87a3e" stroke="#8a5a2b" stroke-width="3"/>
+      </svg>`;
+
+    const modeInfo = {
+      click: {
+        title: "Kattints a megfelelő alakzatra",
+        instructions: "Keresd meg, majd kattints arra az alakzatra, amit a róka kér!",
+        hint: "Tipp: vidd az egeret az alakzat fölé, aztán kattints egyszer."
+      },
+      drag: {
+        title: "Húzd a helyére!",
+        instructions: "Húzd a kért alakzatot a kosárba. Fogd meg az egérrel, és engedd el a célterületen!",
+        hint: "Tipp: nyomd le az egérgombot, mozgasd az egeret, majd engedd fel."
+      },
+      select: {
+        title: "Jelöld ki az összes megfelelőt",
+        instructions: "Kattints az összes olyan alakzatra, amit a róka kér, majd nyomd meg az Ellenőrzés gombot!",
+        hint: "Tipp: több elemet is kijelölhetsz. A kijelölt alakzatok lila keretet kapnak."
+      },
+      keys: {
+        title: "Próbáld ki a gyorsbillentyűket",
+        instructions: "",
+        hint: "Tipp: Mac gépen a Ctrl helyett a ⌘ Command billentyűt használd."
+      }
+    };
+
+    const state = {
+      mode: "click",
+      score: 0,
+      completed: false,
+      target: null,
+      keyShape: null,
+      selectedIds: new Set(),
+      copyReady: false,
+      pasted: false,
+      undoStack: [],
+      nextTimer: null
+    };
+
+    const $ = (selector) => document.querySelector(selector);
+    const playArea = $("#play-area");
+    const feedback = $("#feedback");
+
+    function randomItem(items) {
+      return items[Math.floor(Math.random() * items.length)];
+    }
+
+    // Fisher–Yates keverés, új tömböt ad vissza.
+    function shuffled(items) {
+      const copy = [...items];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    // Mindig más alakzatot ad, mint az előző feladat célja.
+    function pickNewTarget() {
+      let choice;
+      do {
+        choice = randomItem(shapes);
+      } while (state.target && choice.id === state.target.id);
+      return choice;
+    }
+
+    function setFeedback(message, kind = "") {
+      feedback.textContent = message;
+      feedback.className = "feedback" + (kind ? " " + kind : "");
+    }
+
+    function shapeButton(shape, extraClass = "") {
+      const button = document.createElement("button");
+      button.className = "shape-card " + extraClass;
+      button.dataset.id = shape.id;
+      button.type = "button";
+      button.setAttribute("aria-label", shape.name);
+      button.innerHTML =
+        `<span class="symbol" style="color:${shape.color}">${shape.icon}</span>
+         <span class="shape-label">${shape.name}</span>`;
+      return button;
+    }
+
+    function finishTask(message = "Ügyes vagy! Megoldottad a feladatot! ⭐") {
+      if (!state.completed) {
+        state.completed = true;
+        state.score += 1;
+        $("#score").textContent = state.score;
+      }
+      setFeedback(message, "good");
+      scheduleNextTask();
+    }
+
+    // Rövid szünet után automatikusan új feladat indul.
+    function scheduleNextTask() {
+      clearTimeout(state.nextTimer);
+      state.nextTimer = setTimeout(startTask, 1200);
+    }
+
+    function startTask() {
+      clearTimeout(state.nextTimer);
+      state.completed = false;
+      state.selectedIds.clear();
+      state.copyReady = false;
+      state.pasted = false;
+      state.undoStack = [];
+      playArea.innerHTML = "";
+      $("#controls").innerHTML = "";
+
+      $("#title").textContent = modeInfo[state.mode].title;
+      $("#instructions").textContent = modeInfo[state.mode].instructions;
+      $("#hint").textContent = modeInfo[state.mode].hint;
+      setFeedback("");
+
+      if (state.mode === "click") renderClickTask();
+      if (state.mode === "drag") renderDragTask();
+      if (state.mode === "select") renderSelectTask();
+      if (state.mode === "keys") renderKeysTask();
+    }
+
+    function renderClickTask() {
+      const target = pickNewTarget();
+      state.target = target;
+      $("#instructions").textContent =
+        `Keresd meg a ${target.name} alakzatot, majd kattints rá!`;
+
+      const grid = document.createElement("div");
+      grid.className = "items";
+
+      shuffled(shapes).forEach(shape => {
+        const button = shapeButton(shape);
+        button.addEventListener("click", () => {
+          if (state.completed) return;
+          if (shape.id === target.id) {
+            button.classList.add("selected");
+            finishTask("Pontosan! Megtaláltad! ⭐");
+          } else {
+            setFeedback("Majdnem! Próbáld meg újra.", "try");
+          }
+        });
+        grid.appendChild(button);
+      });
+      playArea.appendChild(grid);
+    }
+
+    function renderDragTask() {
+      const target = pickNewTarget();
+      state.target = target;
+      $("#instructions").textContent =
+        `Húzd a ${target.name} alakzatot a kosárba!`;
+
+      const grid = document.createElement("div");
+      grid.className = "items";
+
+      shuffled(shapes).forEach(shape => {
+        const card = shapeButton(shape);
+        card.addEventListener("pointerdown", (event) => beginDrag(event, card, shape));
+        grid.appendChild(card);
+      });
+
+      const drop = document.createElement("div");
+      drop.className = "drop-zone";
+      drop.id = "drop-zone";
+      drop.innerHTML = `${basketSvg}<span class="drop-label">Engedd ide a ${target.name} alakzatot!</span>`;
+
+      playArea.append(grid, drop);
+    }
+
+    function beginDrag(event, card, shape) {
+      if (state.completed) return;
+      event.preventDefault();
+
+      const startX = event.clientX;
+      const startY = event.clientY;
+      const originalTransform = card.style.transform;
+      card.classList.add("dragging");
+
+      function inside(rect, x, y) {
+        return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+      }
+
+      function cleanup() {
+        document.removeEventListener("pointermove", move);
+        document.removeEventListener("pointerup", end);
+        document.removeEventListener("pointercancel", cancel);
+        card.classList.remove("dragging");
+        card.style.transform = originalTransform;
+        const drop = $("#drop-zone");
+        if (drop) drop.classList.remove("over");
+      }
+
+      function move(moveEvent) {
+        const dx = moveEvent.clientX - startX;
+        const dy = moveEvent.clientY - startY;
+        card.style.transform = `translate(${dx}px, ${dy}px) scale(1.04)`;
+        const drop = $("#drop-zone");
+        if (!drop) return;
+        drop.classList.toggle("over", inside(drop.getBoundingClientRect(), moveEvent.clientX, moveEvent.clientY));
+      }
+
+      function end(endEvent) {
+        const drop = $("#drop-zone");
+        const landed = drop && inside(drop.getBoundingClientRect(), endEvent.clientX, endEvent.clientY);
+        cleanup();
+
+        if (!drop) return;
+        if (landed && shape.id === state.target.id) {
+          drop.classList.add("success");
+          drop.querySelector(".drop-label").textContent = `${shape.icon} Bekerült a kosárba!`;
+          finishTask("Remek húzás! Sikerült! ⭐");
+        } else if (landed) {
+          setFeedback("Ez nem az a forma. Próbálj meg egy másikat!", "try");
+        }
+      }
+
+      function cancel() {
+        cleanup();
+      }
+
+      document.addEventListener("pointermove", move);
+      document.addEventListener("pointerup", end);
+      document.addEventListener("pointercancel", cancel);
+    }
+
+    function renderSelectTask() {
+      const target = pickNewTarget();
+      state.target = target;
+      $("#instructions").textContent =
+        `Jelöld ki az összes ${target.name} alakzatot!`;
+
+      // 8 elem: 2–4 célalakzat, a többi más alakzatokból.
+      const correctCount = 2 + Math.floor(Math.random() * 3);
+      const others = shapes.filter(shape => shape.id !== target.id);
+      const items = [
+        ...Array(correctCount).fill(target),
+        ...Array.from({ length: 8 - correctCount }, () => randomItem(others))
+      ];
+      const layout = shuffled(items);
+
+      const correct = new Set(
+        layout
+          .map((shape, index) => (shape.id === target.id ? String(index) : null))
+          .filter(Boolean)
+      );
+
+      const grid = document.createElement("div");
+      grid.className = "items";
+
+      layout.forEach((shape, index) => {
+        const card = shapeButton(shape);
+        card.dataset.index = index;
+        card.addEventListener("click", () => {
+          if (state.completed) return;
+          const key = String(index);
+          if (state.selectedIds.has(key)) {
+            state.selectedIds.delete(key);
+            card.classList.remove("selected");
+          } else {
+            state.selectedIds.add(key);
+            card.classList.add("selected");
+          }
+          setFeedback("");
+        });
+        grid.appendChild(card);
+      });
+
+      playArea.appendChild(grid);
+      const check = document.createElement("button");
+      check.className = "primary";
+      check.textContent = "Ellenőrzöm";
+      check.addEventListener("click", () => {
+        if (state.completed) return;
+        const isCorrect = state.selectedIds.size === correct.size &&
+          [...correct].every(id => state.selectedIds.has(id));
+
+        if (isCorrect) {
+          finishTask("Mindet megtaláltad! Nagyszerű kijelölés! ⭐");
+        } else {
+          setFeedback(`Nézd át még egyszer: csak a ${target.name} alakzatokat jelöld ki!`, "try");
+        }
+      });
+      $("#controls").appendChild(check);
+    }
+
+    function renderKeysTask() {
+      const shape = pickNewTarget();
+      state.keyShape = shape;
+      state.target = shape;
+      $("#instructions").textContent =
+        `Kattints a ${shape.name} alakzatra, másold le, majd illeszd be a Ctrl+C és Ctrl+V billentyűkkel.`;
+
+      const board = document.createElement("div");
+      board.className = "items";
+      board.id = "key-board";
+
+      const original = shapeButton(shape);
+      original.id = "copy-source";
+      original.addEventListener("click", () => {
+        document.querySelectorAll("#key-board .shape-card").forEach(item => {
+          item.classList.remove("selected");
+        });
+        original.classList.add("selected");
+        setFeedback(`Kijelölted a ${shape.name} alakzatot. Most másold le!`, "");
+      });
+      board.appendChild(original);
+      playArea.appendChild(board);
+
+      $("#controls").innerHTML = `
+        <button class="secondary" id="copy-button">Másolás (Ctrl+C)</button>
+        <button class="secondary" id="paste-button">Beillesztés (Ctrl+V)</button>
+        <button class="secondary" id="undo-button">Visszavonás (Ctrl+Z)</button>
+      `;
+
+      $("#copy-button").addEventListener("click", copyShape);
+      $("#paste-button").addEventListener("click", pasteShape);
+      $("#undo-button").addEventListener("click", undoPaste);
+
+      const keys = document.createElement("div");
+      keys.className = "keys";
+      keys.innerHTML = "<kbd>Ctrl</kbd><kbd>C</kbd><span>másolás</span>" +
+                       "<kbd>Ctrl</kbd><kbd>V</kbd><span>beillesztés</span>" +
+                       "<kbd>Ctrl</kbd><kbd>Z</kbd><span>visszavonás</span>";
+      playArea.appendChild(keys);
+    }
+
+    function copyShape() {
+      const source = $("#copy-source");
+      if (!source || !source.classList.contains("selected")) {
+        setFeedback(`Először kattints a ${state.keyShape.name} alakzatra!`, "try");
+        return;
+      }
+      state.copyReady = true;
+      source.classList.add("copied");
+      setFeedback("Lemásoltad! Most illeszd be a Ctrl+V billentyűkkel.", "good");
+    }
+
+    function pasteShape() {
+      if (!state.copyReady) {
+        setFeedback(`Először jelöld ki és másold le a ${state.keyShape.name} alakzatot!`, "try");
+        return;
+      }
+      if (state.pasted || state.completed) return;
+
+      const copy = shapeButton(state.keyShape);
+      copy.classList.add("selected");
+      copy.setAttribute("aria-label", `${state.keyShape.name} másolata`);
+      $("#key-board").appendChild(copy);
+      state.pasted = true;
+      state.undoStack.push(copy);
+      finishTask("Sikerült beillesztened a másolatot! ⭐");
+    }
+
+    // A visszavonás nem veszi vissza a már megszerzett pontot,
+    // így a Ctrl+V / Ctrl+Z ismétlésével nem lehet pontot farmolni.
+    function undoPaste() {
+      const last = state.undoStack.pop();
+      if (last) {
+        last.remove();
+        state.pasted = false;
+        setFeedback("Visszavontad az utolsó lépést. Próbáld ki újra a beillesztést!");
+      } else {
+        setFeedback("Most nincs mit visszavonni.", "try");
+      }
+    }
+
+    document.addEventListener("keydown", event => {
+      if (state.mode !== "keys") return;
+      const modifier = event.ctrlKey || event.metaKey;
+      if (!modifier) return;
+
+      const key = event.key.toLowerCase();
+      if (key === "c") {
+        event.preventDefault();
+        copyShape();
+      } else if (key === "v") {
+        event.preventDefault();
+        pasteShape();
+      } else if (key === "z") {
+        event.preventDefault();
+        undoPaste();
+      }
+    });
+
+    document.querySelectorAll(".nav-button").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".nav-button").forEach(item =>
+          item.classList.remove("active")
+        );
+        button.classList.add("active");
+        state.mode = button.dataset.mode;
+        startTask();
+      });
+    });
+
+    $("#new-task").addEventListener("click", startTask);
+
+    startTask();
+  </script>
+</body>
+</html>
+
