@@ -1,1 +1,1 @@
-# oktatas
+Oktatási weblapok egyűjteménye.
